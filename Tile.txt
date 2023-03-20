@@ -1,0 +1,55 @@
+#include <vector> // vector
+
+#include "Unit.h" // for Unit class
+#include "Player.h" // Player class
+
+constexpr enum terrainType
+{
+ROAD	= 0,
+SHOAL,
+PLAIN,
+PIPE,
+PIPE_SEAM,
+PIPE_SEAM_BROKEN,
+RIVER,
+OCEAN,
+REEF,
+FOREST,
+SILO,
+SILO_U,
+MOUNTAIN,
+CITY,
+BASE,
+AIRPORT,
+PORT,
+TOWER,
+LAB,
+HQ // =19
+}
+
+// usage: givesFunds[terrainType]
+constexpr std::vector<bool> givesFunds   = {0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,0,0,1};
+constexpr std::vector<bool> isCapturable = {0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1};
+
+class Tile
+{
+private: 
+    
+public:
+    Tile(terrainType terrain);
+    Tile *n = nullptr,*s = nullptr,*e = nullptr,*w = nullptr;
+    int x=-1,y=-1;
+    Unit *u = nullptr;
+    terrainType terrain = ROAD;
+    Player *isOwnedBy = nullptr;
+    bool    isCapturable = false;
+    
+};
+
+class Map
+{
+private:
+
+public:
+    std::vector<std::vector<Tile*>> tileMap = {};
+}

@@ -1,0 +1,140 @@
+// AWBW map color coding
+// Goals: Show generic "control" of tiles on the map based on proximity to bases/airports. Use things like Djkstra's to identify shortest path to every tile (per unit type) on the map given the location of each player's bases/airports. 
+#include <vector>	// vector
+#include <queue>	// queue
+
+#include "Tile.h"	// Tile class, terrainType enum
+#include "Unit.h"	// Unit class, moveCostArray
+#include "Player.h"	// Player class
+
+void inline checkNeighbor(Tile* t, int curCost, int movementRange, std::vector<int> *movementCosts, std::vector<std::vector<int>> *distBoard, std::queue<Tile*> *q, Player* curPlayer){
+    int xNew = t->x;
+    int yNew = t->y;
+
+    if(t->u && t->u->isOwnedBy != curPlayer){
+        // tile currently occupied by an enemy unit, we can't move here so simply return.
+        return;
+    }
+
+    int newTileCost = (*movementCosts)[t->n->terrain];
+    int newCost = INT_MAX; // TODO: make this a turnary?
+    if(curCost%movementRange + newTileCost > movementRange){
+        newCost = curCost - curCost%movementRange + movementRange + newTileCost;
+    }
+    else{
+        newCost = curCost + newTileCost;
+    }
+
+    if(newCost < (*distBoard)[xNew][yNew]){
+        (*distBoard)[xNew][yNew] = newCost;
+        q->push(t);
+    }
+
+    return;
+}
+
+std::vector<std::vector<int>> findShortestDistanceToTiles(const int movementRange, const Tile *loc, const std::vector<std::vector<Tile*>> *board, const std::vector<int> *movementCosts, Player *curPlayer)
+{
+    // make an empty copy of a 2d array matching size of tile map
+    std::vector<int> row(board->size(), INT_MAX); // TODO? Simplify this empty map creation.
+    std::vector<std::vector<int>> distBoard(board[0].size(), row);
+
+    // add current tile to queue
+    std::queue<Tile*> q = {};
+    distBoard[loc->x][loc->y] = 0;
+    q.push(loc);
+
+    // For each tile in queue, check neighbors. 
+    // Compare cost to get to this tile plus cost to traverse the target tile.
+    // If cost is too great to reach in the same turn, then add extra cost.
+    // If cost is less than known cost to reach that tile, add that tile to the queue.
+    while(!q.empty){
+        // it appears my inner-loop was not necessary. sz wasn't used for anything, and we already loop until the queue is empty.
+	//int sz=q.size();
+        //while(sz--){
+            Tile* f = q.front();
+            q.pop();
+            xCur = f->x;
+            yCur = f->y;
+            int curCost = distBoard[xCur][yCur];
+
+            if(f->n && INT_MAX != (*movementCosts)[f->n->terrain]){
+		checkNeighbor(f->n, curCost, movementRange, movementCosts, &distBoard, &q, curPlayer);
+            }
+            if(f->e && INT_MAX != (*movementCosts)[f->e->terrain]){
+		checkNeighbor(f->e, curCost, movementRange, movementCosts, &distBoard, &q, curPlayer);
+            }
+            if(f->s && INT_MAX != (*movementCosts)[f->s->terrain]){
+		checkNeighbor(f->s, curCost, movementRange, movementCosts, &distBoard, &q, curPlayer);
+            }
+            if(f->w && INT_MAX != (*movementCosts)[f->w->terrain]){
+		checkNeighbor(f->w, curCost, movementRange, movementCosts, &distBoard, &q, curPlayer);
+            }
+        //}
+    }
+    return distBoard;
+}
+
+// Return a 2d array representing the number of turns it takes for a unit with given movementRange and movementCosts to reach any given tile on the board.
+// Utilizes a non-greedy djkstra's algorithm, breadth-first to help optimize runtime.
+
+std::vector<std::vector<int>> findTurnsToTiles(const int movementRange, const Tile *loc, const std::vector<std::vector<Tile*>> *board, const std::vector<int> *movementCosts)
+{
+    std::vector<std::vector<int>> distBoard = findShortestDistanceToTiles(movementRange, loc, board, movementCosts, nullptr);
+}
+
+std::vector<std::vector<int>> findTurnsToTiles(const int movementRange, const Tile *loc, const std::vector<std::vector<Tile*>> *board, const std::vector<int> *movementCosts, Player *curPlayer)
+{
+    std::vector<std::vector<int>> distBoard = findShortestDistanceToTiles(movementRange, loc, board, movementCosts, curPlayer);
+    for(int i=0; i<distBoard.size(); i++){
+        for(int i=0; i<distBoard[0].size(); j++){
+            distBoard[i][j]/=movementRange;
+        }
+    }
+
+    return distBoard; // now this 2d array shows distance in terms of turns instead of realized movement cost.
+
+}
+
+/////////////////////////////////////////////////////////////
+// Now that tile weighting algorithms are written, it's time to weigh the starting map from both player's bases
+
+// TODO: write an operator for vector to sum, subtract, or multiply
+
+struct PlayerStarterInfo
+{
+    Player* p;
+    std::vector<Tile*> bases;
+    std::vector<int>   baseInfantryDelays; // number of turns before the first infantry built can move from a given base. ex: predeploys would be 0, bases owned at start would be 1.
+    std::vector<int>   baseTankDelays; // number of turns before the first tank built can move from a given base. ex: predeploys would be 0, bases owned at start would be ... variable depending on income.
+    std::vector<Tile*> airports;
+    //std::vector<std::vector<int> moveCostArray
+}
+
+
+
+std::vector<std::vector<int>> identifyProximityDifferences(const int movementRange, const PlayerStarterInfo *p1Info, const PlayerStarterInfo *p2Info, const std::vector<std::vector<Tile*>> *board, std::vector<int> *p1movementCosts, std::vector<int> *p2movementCosts, std::vector<int> *p1BaseDelays, std::vector<int> *p2BaseDelays)
+{
+    // make an empty copy of a 2d array matching size of tile map
+    std::vector<int> row(board->size(), INT_MAX); // TODO? Simplify this empty map creation.
+    std::vector<std::vector<int>> proximityBoard(board[0].size(), row);
+
+    // positive values represent greater proximity for p1
+    for(int i=0; i<p1Info.bases.size(); ++i){
+        proximityBoard -= ((*p1baseDelays)[i] + findTurnsToTiles(movementRange, p1Info->bases[i], board, movementCosts));
+        proximityBoard += ((*p2baseDelays)[i] + findTurnsToTiles(movementRange, p2Info->bases[i], board, movementCosts));
+    }
+
+    return proximityBoard;
+}
+
+void measureProximity(const PlayerStarterInfo *p1Info, const PlayerStarterInfo *p2Info, const std::vector<std::vector<Tile*>> *board)
+{
+    // first, check the result for infantry movement
+    std::vector<std::vector<int>> infantryProximity = identifyProximityDifferences(3, p1Info, p2Info, board, &moveCostArray[INFANTRY], &moveCostArray[INFANTRY], p1Info->baseInfantryDelays, p2Info->baseInfantryDelays);
+
+    // then check tank proximity
+    std::vector<std::vector<int>> tankProximity = identifyProximityDifferences(3, p1Info, p2Info, board, &moveCostArray[TANK], &moveCostArray[TANK], p1Info->baseTankDelays, p2Info->baseTankDelays);
+
+// TODO: Think of some pretty way to display this.
+}

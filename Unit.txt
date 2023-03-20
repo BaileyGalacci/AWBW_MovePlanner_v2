@@ -1,0 +1,90 @@
+#include <vector>	// vector
+
+#include "Tile.h"	// for terrainType enum and Tile class
+#include "Player.h"	// for Player class
+
+// ignoring weather and Sturm for now
+enum movementType
+{
+TIRES = 0,
+TREADS,
+FOOT,
+BOOTS,
+LANDER,
+SHIP,
+COPTER,
+PLANE,
+PIPERUNNER
+}
+
+enum unitType
+{
+INFANTRY = 0,
+MECH,
+RECON,
+APC,
+ARTILLERY,
+TANK,
+ANTIAIR,
+MISSILE,
+ROCKET,
+MDTANK,
+PIPERUNNER,
+NEOTANK,
+MEGATANK,
+TCOPTER,// =13
+BCOPTER,
+FIGHTER,
+BOMBER,
+BBOAT,	// = 17
+LANDER,
+CRUISER,
+SUBMARINE,
+BATTLESHIP,
+CARRIER
+}
+
+// usage: moveCostArray[movementType][terrainType]
+//  or, get a row from moveCostArray[movementType]
+constexpr std::vector<std::vector<int> moveCostArray = {
+//	ROAD,	SHOAL,	PLAIN,	PIPE,	PIPE_SEAM,	PIPE_SEAM_BROKEN,	RIVER,		OCEAN,		REEF,	FOREST,	SILO,	SILO_U,	MOUNTAIN,	CITY,	BASE,	AIRPORT,	PORT,	TOWER,	LAB,	HQ
+//TIRES
+{	1,	1,	2,	INT_MAX,INT_MAX,	2,			INT_MAX,	INT_MAX,	INT_MAX,3,	1,	1,	INT_MAX,	1,	1,	1,		1,	1,	1,	1},
+
+//TREADS
+{	1,	1,	1,	INT_MAX,INT_MAX,	1,			INT_MAX,	INT_MAX,	INT_MAX,2,	1,	1,	INT_MAX,	1,	1,	1,		1,	1,	1,	1},
+
+//FOOT
+{	1,	1,	2,	INT_MAX,INT_MAX,	1,			2,		INT_MAX,	INT_MAX,1,	1,	1,	2,		1,	1,	1,		1,	1,	1,	1},
+
+//BOOTS
+{	1,	1,	1,	INT_MAX,INT_MAX,	1,			1,		INT_MAX,	INT_MAX,1,	1,	1,	1,		1,	1,	1,		1,	1,	1,	1},
+
+//LANDER
+{	INT_MAX,1,	INT_MAX,INT_MAX,INT_MAX,	INT_MAX,		INT_MAX,	1,		2,	INT_MAX,INT_MAX,INT_MAX,INT_MAX,	INT_MAX,INT_MAX,INT_MAX,	1,	INT_MAX,INT_MAX,INT_MAX},
+
+//SHIP
+{	INT_MAX,INT_MAX,INT_MAX,INT_MAX,INT_MAX,	INT_MAX,		INT_MAX,	1,		2,	INT_MAX,INT_MAX,INT_MAX,INT_MAX,	INT_MAX,INT_MAX,INT_MAX,	1,	INT_MAX,INT_MAX,INT_MAX},
+
+//COPTER
+{	1,	1,	1,	INT_MAX,INT_MAX,	1,			1,		1,		1,	1,	1,	1,	1,		1,	1,	1,		1,	1,	1,	1},
+
+//PLANE
+{	1,	1,	1,	INT_MAX,INT_MAX,	1,			1,		1,		1,	1,	1,	1,	1,		1,	1,	1,		1,	1,	1,	1},
+
+//PIPERUNNER
+{	INT_MAX,INT_MAX,INT_MAX,1,	1,		INT_MAX,		INT_MAX,	INT_MAX,	INT_MAX,INT_MAX,INT_MAX,INT_MAX,INT_MAX,	INT_MAX,1,	INT_MAX,	INT_MAX,INT_MAX,INT_MAX,INT_MAX}
+}
+
+class Unit
+{
+private:
+
+
+public:
+    Tile *loc; // current location of this unit
+    Player *isOwnedBy = nullptr;
+    int *movementRange = nullptr;
+    movementType moveType = 0;
+    
+}
